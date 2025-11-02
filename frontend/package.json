@@ -1,0 +1,12 @@
+{
+  "name": "obra-publica-frontend",
+  "version": "1.0.0",
+  "description": "Frontend para visualizar obras públicas desde blockchain",
+  "scripts": {
+    "dev": "npx http-server . -p 8080 -c-1",
+    "start": "npx http-server . -p 8080"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

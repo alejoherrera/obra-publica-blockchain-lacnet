@@ -1,0 +1,652 @@
+================================================================================
+PASOS PARA CONFIGURAR SISTEMA OBRA PÚBLICA BLOCKCHAIN - ORDEN ESTRICTO
+================================================================================
+
+CONTEXTO DEL PROYECTO:
+- Sistema completo para almacenar datos de obras públicas en blockchain LACNET local
+- Visualización en mapa interactivo generado desde datos de blockchain en tiempo real
+- Todo funciona 100% local (sin conexión a redes externas)
+- Datos de ejemplo en: C:\Users\aleja\blockchain\riesgo_climatico.json
+
+UBICACIÓN DEL PROYECTO:
+C:\Users\aleja\blockchain\obra-publica-blockchain\
+
+ESTADO ACTUAL:
+✅ Proyecto creado con toda la estructura
+✅ Smart contract (Solidity) listo
+✅ Scripts de deploy y registro listos
+✅ API REST completa
+✅ Frontend con mapa interactivo listo
+❌ WSL2 no está completamente configurado
+❌ Falta instalar Docker Desktop
+❌ Falta levantar nodo blockchain LACNET
+❌ Falta desplegar el smart contract
+
+================================================================================
+PASO 1: CONFIGURAR WSL2 (REQUISITO CRÍTICO)
+================================================================================
+
+PROBLEMA ACTUAL:
+El sistema reporta que WSL2 no está habilitado correctamente.
+Error: "Plataforma de máquina virtual" no habilitada
+
+SOLUCIÓN:
+
+1.1) Habilitar Virtualización en BIOS/UEFI
+   - Reiniciar PC
+   - Entrar al BIOS (F2, F10, F12 o DEL durante arranque)
+   - Buscar: "Intel VT-x" o "AMD-V" o "Virtualization Technology"
+   - Cambiar a: ENABLED
+   - Guardar (F10) y reiniciar
+
+1.2) Habilitar Componentes de Windows
+   Abrir PowerShell como ADMINISTRADOR y ejecutar:
+
+   ```powershell
+   # Habilitar Subsistema de Windows para Linux
+   dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+
+   # Habilitar Plataforma de Máquina Virtual
+   dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+
+   # Reiniciar
+   shutdown /r /t 10
+   ```
+
+1.3) Después del reinicio, actualizar kernel de WSL2
+   PowerShell como Administrador:
+
+   ```powershell
+   # Descargar e instalar actualización del kernel
+   # O descargar manualmente desde:
+   # https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
+
+   # Establecer WSL2 como predeterminado
+   wsl --set-default-version 2
+   ```
+
+1.4) Instalar Ubuntu
+   ```powershell
+   wsl --install -d Ubuntu
+   ```
+
+   - Se abrirá ventana de Ubuntu
+   - Crear usuario y contraseña (ANOTAR BIEN)
+   - Esperar a que termine la instalación
+
+1.5) Verificar instalación
+   ```powershell
+   wsl --status
+   ```
+
+   Debe mostrar: "Versión predeterminada: 2"
+   SIN errores de virtualización
+
+   ```powershell
+   wsl --list --verbose
+   ```
+
+   Debe mostrar:
+   NAME      STATE      VERSION
+   Ubuntu    Running    2
+
+VERIFICACIÓN: Si "wsl --status" no muestra errores, continuar al Paso 2.
+
+================================================================================
+PASO 2: INSTALAR DOCKER DESKTOP
+================================================================================
+
+2.1) Descargar Docker Desktop
+   URL: https://www.docker.com/products/docker-desktop/
+   Descargar versión para Windows
+
+2.2) Instalar Docker Desktop
+   - Ejecutar instalador
+   - IMPORTANTE: Marcar "Use WSL 2 instead of Hyper-V"
+   - Completar instalación
+   - Reiniciar si se solicita
+
+2.3) Configurar Docker Desktop
+   - Abrir Docker Desktop
+   - Ir a Settings (icono engranaje)
+   - General → Verificar "Use the WSL 2 based engine" está marcado ✓
+   - Resources → WSL Integration:
+     * Habilitar "Enable integration with my default WSL distro"
+     * Habilitar específicamente para "Ubuntu"
+   - Click "Apply & Restart"
+
+2.4) Verificar Docker en WSL
+   Abrir terminal de Ubuntu (WSL):
+   ```bash
+   docker --version
+   docker-compose --version
+   ```
+
+   Ambos comandos deben mostrar versión instalada.
+
+VERIFICACIÓN: Si "docker --version" funciona en WSL, continuar al Paso 3.
+
+================================================================================
+PASO 3: LEVANTAR NODO BLOCKCHAIN LACNET LOCAL
+================================================================================
+
+IMPORTANTE: Todos estos comandos se ejecutan DENTRO de WSL (Ubuntu),
+NO en PowerShell de Windows.
+
+3.1) Abrir terminal WSL
+   ```bash
+   wsl
+   ```
+
+3.2) Ir al directorio home de Linux (CRÍTICO)
+   ```bash
+   cd ~
+   ```
+
+   NOTA: NO usar /mnt/c/ - los permisos POSIX no funcionan en NTFS
+
+3.3) Instalar Git si no está instalado
+   ```bash
+   sudo apt update
+   sudo apt install git -y
+   ```
+
+3.4) Clonar repositorio de LACNET
+   ```bash
+   git clone https://github.com/LACNet-Networks/besu-networks
+   cd besu-networks/docker/compose/local/writer1
+   ```
+
+3.5) Configurar permisos (PASO CRÍTICO)
+   ```bash
+   sudo chmod -R 777 data
+   ```
+
+3.6) Subir un nivel y levantar nodo
+   ```bash
+   cd ..
+   docker-compose up -d
+   ```
+
+3.7) Verificar que el nodo esté corriendo
+   ```bash
+   docker-compose logs -f besu
+   ```
+
+   Deberías ver logs de bloques siendo creados.
+   Presionar Ctrl+C para salir de los logs.
+
+3.8) Verificar conectividad RPC (VERIFICACIÓN IMPORTANTE)
+   ```bash
+   curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:4545
+   ```
+
+   RESULTADO ESPERADO:
+   {"jsonrpc":"2.0","id":1,"result":"0x..."}
+
+   Si no responde, esperar 1-2 minutos y volver a intentar.
+
+VERIFICACIÓN: Si curl devuelve un resultado JSON, el nodo está funcionando.
+Continuar al Paso 4.
+
+NOTA: El nodo seguirá corriendo en segundo plano. Para detenerlo:
+```bash
+cd ~/besu-networks/docker/compose/local
+docker-compose down
+```
+
+================================================================================
+PASO 4: INSTALAR NODE.JS EN WINDOWS (SI NO ESTÁ INSTALADO)
+================================================================================
+
+4.1) Verificar si Node.js está instalado
+   En PowerShell o CMD:
+   ```bash
+   node --version
+   npm --version
+   ```
+
+4.2) Si NO está instalado:
+   - Descargar desde: https://nodejs.org/
+   - Versión recomendada: LTS (Long Term Support)
+   - Ejecutar instalador
+   - Reiniciar terminal después de instalar
+
+4.3) Verificar instalación
+   ```bash
+   node --version
+   npm --version
+   ```
+
+   Ambos deben mostrar versión (ej: v18.x.x)
+
+VERIFICACIÓN: Si node y npm funcionan, continuar al Paso 5.
+
+================================================================================
+PASO 5: DESPLEGAR SMART CONTRACT A BLOCKCHAIN
+================================================================================
+
+IMPORTANTE: Estos comandos se ejecutan en Windows (PowerShell o CMD),
+NO en WSL.
+
+5.1) Navegar al directorio de scripts
+   ```bash
+   cd C:\Users\aleja\blockchain\obra-publica-blockchain\scripts
+   ```
+
+5.2) Instalar dependencias
+   ```bash
+   npm install
+   ```
+
+   Esto instalará: web3, solc, dotenv
+
+5.3) Desplegar el contrato
+   ```bash
+   npm run deploy
+   ```
+
+   RESULTADO ESPERADO:
+   ✅ Contrato desplegado exitosamente!
+   📍 Dirección del contrato: 0x...
+   ✓ Información guardada en: deployment.json
+   ✓ Archivo .env actualizado
+
+   Si hay error "No hay cuentas disponibles":
+   - Esperar 1-2 minutos (el nodo está iniciando)
+   - Volver a ejecutar "npm run deploy"
+
+5.4) Verificar despliegue
+   Debe haberse creado el archivo: deployment.json
+   ```bash
+   dir deployment.json
+   ```
+
+VERIFICACIÓN: Si deployment.json existe y npm run deploy fue exitoso,
+continuar al Paso 6.
+
+================================================================================
+PASO 6: REGISTRAR OBRA DE EJEMPLO EN BLOCKCHAIN
+================================================================================
+
+Seguimos en: C:\Users\aleja\blockchain\obra-publica-blockchain\scripts
+
+6.1) Registrar la obra de ejemplo
+   ```bash
+   npm run register
+   ```
+
+   RESULTADO ESPERADO:
+   ✅ Obra registrada exitosamente!
+   🆔 ID de la obra: 1
+   📍 Hash de transacción: 0x...
+   📦 Bloque: X
+
+6.2) Consultar obras registradas
+   ```bash
+   npm run query
+   ```
+
+   RESULTADO ESPERADO:
+   📊 Estadísticas:
+   - Total de obras: 1
+   - Obras activas: 1
+
+   ┌─ Obra #1 ✓
+   │ Ubicación: San Jose, Costa Rica
+   │ Tipo: Canalización/Modificación de cauce...
+   │ Riesgos identificados: 3
+   └─────────────────────────────
+
+VERIFICACIÓN: Si la obra aparece listada, continuar al Paso 7.
+
+================================================================================
+PASO 7: INICIAR API REST
+================================================================================
+
+7.1) Abrir NUEVA terminal (PowerShell o CMD)
+
+7.2) Navegar al directorio de la API
+   ```bash
+   cd C:\Users\aleja\blockchain\obra-publica-blockchain\api
+   ```
+
+7.3) Instalar dependencias
+   ```bash
+   npm install
+   ```
+
+7.4) Iniciar servidor de API
+   ```bash
+   npm start
+   ```
+
+   RESULTADO ESPERADO:
+   ✓ Conectado a blockchain en bloque: X
+   ✓ Contrato cargado: 0x...
+   ✅ API corriendo en http://localhost:3000
+
+   NOTA: Esta terminal debe PERMANECER ABIERTA.
+   La API está corriendo en primer plano.
+
+7.5) Verificar API (desde navegador o nueva terminal)
+   Abrir en navegador:
+   - http://localhost:3000/
+   - http://localhost:3000/api/stats
+   - http://localhost:3000/api/obras
+
+   Todos deben devolver JSON con datos.
+
+VERIFICACIÓN: Si http://localhost:3000/api/obras muestra la obra,
+continuar al Paso 8.
+
+IMPORTANTE: NO cerrar esta terminal, la API debe seguir corriendo.
+
+================================================================================
+PASO 8: INICIAR FRONTEND (VISUALIZADOR WEB)
+================================================================================
+
+8.1) Abrir OTRA NUEVA terminal (PowerShell o CMD)
+
+8.2) Navegar al directorio del frontend
+   ```bash
+   cd C:\Users\aleja\blockchain\obra-publica-blockchain\frontend
+   ```
+
+8.3) Instalar dependencias
+   ```bash
+   npm install
+   ```
+
+8.4) Iniciar servidor web
+   ```bash
+   npm run dev
+   ```
+
+   RESULTADO ESPERADO:
+   Starting up http-server...
+   Available on:
+     http://localhost:8080
+
+   NOTA: Esta terminal también debe PERMANECER ABIERTA.
+
+8.5) Abrir en navegador
+   http://localhost:8080
+
+   DEBERÍAS VER:
+   - Mapa interactivo con Leaflet
+   - Estadísticas en el header (Total de Obras: 1, etc.)
+   - Lista de obras en el sidebar izquierdo
+   - Marcadores en el mapa (San José, Costa Rica)
+   - Al hacer clic: popup con detalles y riesgos
+
+VERIFICACIÓN: Si el mapa muestra la obra con sus datos,
+¡EL SISTEMA ESTÁ COMPLETAMENTE FUNCIONAL! ✅
+
+================================================================================
+PASO 9: VERIFICACIÓN COMPLETA DEL SISTEMA
+================================================================================
+
+Servicios corriendo:
+
+✅ Blockchain LACNET (WSL)
+   - Puerto: 4545
+   - Verificar: curl http://localhost:4545
+   - Logs: cd ~/besu-networks/docker/compose/local && docker-compose logs -f besu
+
+✅ API REST (Windows)
+   - Puerto: 3000
+   - Verificar: http://localhost:3000/api/stats
+   - Terminal debe estar abierta corriendo "npm start"
+
+✅ Frontend (Windows)
+   - Puerto: 8080
+   - Verificar: http://localhost:8080
+   - Terminal debe estar abierta corriendo "npm run dev"
+
+RESUMEN DE TERMINALES ABIERTAS:
+1. WSL: Nodo blockchain corriendo en Docker (puede estar en background)
+2. Terminal 1 (Windows): API corriendo (npm start en /api)
+3. Terminal 2 (Windows): Frontend corriendo (npm run dev en /frontend)
+
+================================================================================
+PASO 10: USO DEL SISTEMA
+================================================================================
+
+REGISTRAR NUEVA OBRA:
+
+Opción A - Vía Scripts:
+1. Editar: C:\Users\aleja\blockchain\data\riesgo_climatico.json
+2. Ejecutar en nueva terminal:
+   ```bash
+   cd C:\Users\aleja\blockchain\obra-publica-blockchain\scripts
+   npm run register
+   ```
+3. Refrescar navegador en http://localhost:8080
+
+Opción B - Vía API (POST):
+```bash
+curl -X POST http://localhost:3000/api/obras \
+  -H "Content-Type: application/json" \
+  -d '{
+    "datosJSON": {...},
+    "ubicacion": "Ciudad, País",
+    "tipoObra": "Tipo de construcción"
+  }'
+```
+
+CONSULTAR OBRAS:
+- En navegador: http://localhost:8080
+- Vía API: http://localhost:3000/api/obras
+- Vía scripts: npm run query (en /scripts)
+
+VER ESTADÍSTICAS:
+- http://localhost:3000/api/stats
+- http://localhost:8080 (header superior)
+
+================================================================================
+COMANDOS ÚTILES PARA GESTIÓN
+================================================================================
+
+REINICIAR NODO BLOCKCHAIN:
+```bash
+wsl
+cd ~/besu-networks/docker/compose/local
+docker-compose restart
+```
+
+DETENER TODO:
+```bash
+# En WSL
+cd ~/besu-networks/docker/compose/local
+docker-compose down
+
+# En terminales de Windows: Ctrl+C en API y Frontend
+```
+
+VER LOGS DEL NODO:
+```bash
+wsl
+cd ~/besu-networks/docker/compose/local
+docker-compose logs -f besu
+```
+
+LIMPIAR Y EMPEZAR DE NUEVO:
+```bash
+# Detener nodo
+wsl
+cd ~/besu-networks/docker/compose/local
+docker-compose down
+
+# Limpiar datos
+cd writer1
+sudo rm -rf data/*
+cd ..
+
+# Reiniciar
+docker-compose up -d
+
+# Re-desplegar contrato (en Windows)
+cd C:\Users\aleja\blockchain\obra-publica-blockchain\scripts
+npm run deploy
+npm run register
+```
+
+INICIO RÁPIDO (después de setup inicial):
+Doble click en: C:\Users\aleja\blockchain\obra-publica-blockchain\start.bat
+
+================================================================================
+SOLUCIÓN DE PROBLEMAS COMUNES
+================================================================================
+
+PROBLEMA: "Error: connect ECONNREFUSED localhost:4545"
+SOLUCIÓN:
+- El nodo blockchain no está corriendo
+- Ejecutar: wsl -> cd ~/besu-networks/docker/compose/local -> docker-compose up -d
+- Esperar 1-2 minutos y reintentar
+
+PROBLEMA: "Error: No hay cuentas disponibles"
+SOLUCIÓN:
+- El nodo está iniciando aún
+- Esperar 1-2 minutos
+- Verificar logs: docker-compose logs -f besu
+
+PROBLEMA: "Permission denied" en WSL
+SOLUCIÓN:
+- Asegurarse de estar en sistema de archivos de WSL (cd ~)
+- NO usar /mnt/c/
+- Ejecutar: sudo chmod -R 777 data
+
+PROBLEMA: Frontend no muestra datos
+SOLUCIÓN:
+- Verificar que API esté corriendo en puerto 3000
+- Abrir http://localhost:3000/api/obras
+- Si API no responde, reiniciar: Ctrl+C y npm start
+- Verificar consola del navegador (F12) para errores CORS
+
+PROBLEMA: "Docker daemon not running"
+SOLUCIÓN:
+- Abrir Docker Desktop
+- Esperar a que inicie completamente
+- Verificar ícono en system tray (debe estar verde)
+
+================================================================================
+ARQUITECTURA DEL SISTEMA
+================================================================================
+
+FLUJO DE DATOS:
+
+1. Usuario -> Ejecuta "npm run register"
+2. Script -> Envía transacción a blockchain (puerto 4545)
+3. Blockchain -> Ejecuta smart contract, guarda datos
+4. API -> Lee eventos/datos del smart contract vía Web3.js
+5. Frontend -> Consulta API vía HTTP
+6. Usuario -> Ve datos en mapa interactivo
+
+COMPONENTES:
+
+┌─────────────┐
+│  Frontend   │ (HTML/JS + Leaflet) - Puerto 8080
+│  (Mapa)     │
+└─────┬───────┘
+      │ HTTP GET /api/obras
+      ▼
+┌─────────────┐
+│  API REST   │ (Node.js + Express) - Puerto 3000
+│             │
+└─────┬───────┘
+      │ Web3.js (JSON-RPC)
+      ▼
+┌─────────────┐
+│   Smart     │ (Solidity - ObraPublica.sol)
+│  Contract   │
+└─────┬───────┘
+      │ Deployed on
+      ▼
+┌─────────────┐
+│ Blockchain  │ (Hyperledger Besu) - Puerto 4545
+│   LACNET    │ (Docker en WSL2)
+└─────────────┘
+
+ARCHIVOS IMPORTANTES:
+
+Smart Contract:
+- /contracts/ObraPublica.sol
+
+Scripts:
+- /scripts/deploy-contract.js (Despliega contrato)
+- /scripts/register-obra.js (Registra obras)
+- /scripts/query-obras.js (Consulta obras)
+- /scripts/deployment.json (Dirección del contrato)
+
+API:
+- /api/server.js (Servidor Express)
+
+Frontend:
+- /frontend/index.html (Aplicación web completa)
+
+Datos:
+- /data/riesgo_climatico.json (Datos de ejemplo)
+
+Documentación:
+- README.md (Overview)
+- INSTALACION.md (Guía paso a paso)
+- ARQUITECTURA.md (Detalles técnicos)
+- SETUP_WSL2.md (Solución WSL2)
+- pasos_seguir.txt (Este archivo)
+
+================================================================================
+PARA FUTURAS INSTANCIAS DE CLAUDE
+================================================================================
+
+CONTEXTO RÁPIDO:
+- Sistema blockchain para obras públicas con visualización en mapa
+- LACNET local (Hyperledger Besu) en Docker/WSL2
+- Smart contract en Solidity ya creado
+- API REST en Node.js ya creada
+- Frontend con Leaflet.js ya creado
+- Datos de ejemplo en riesgo_climatico.json
+
+VERIFICAR PRIMERO:
+1. ¿WSL2 está configurado? -> wsl --status
+2. ¿Docker está corriendo? -> docker --version en WSL
+3. ¿Nodo blockchain está activo? -> curl localhost:4545
+4. ¿Smart contract desplegado? -> Verificar scripts/deployment.json existe
+5. ¿Obra registrada? -> cd scripts && npm run query
+
+AYUDAR AL USUARIO CON:
+- Debugging de errores específicos
+- Agregar nuevas features al smart contract
+- Modificar frontend para agregar campos
+- Optimizar almacenamiento (IPFS, etc.)
+- Migrar a testnet LACNET pública
+- Agregar autenticación con MetaMask
+- Crear nuevos endpoints en la API
+
+NO RECREAR:
+- La estructura ya existe completa
+- Los archivos principales ya están creados
+- Solo modificar/extender según necesidad del usuario
+
+COMANDOS DE DIAGNÓSTICO RÁPIDO:
+```bash
+# Verificar todo
+wsl --status
+wsl
+cd ~/besu-networks/docker/compose/local
+docker-compose ps
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:4545
+exit
+cd C:\Users\aleja\blockchain\obra-publica-blockchain\scripts
+npm run query
+```
+
+Si todo lo anterior funciona, el sistema está operativo.
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
+
+Última actualización: 2025-11-01
+Versión: 1.0
+Proyecto: Obra Pública Blockchain - Sistema Local LACNET

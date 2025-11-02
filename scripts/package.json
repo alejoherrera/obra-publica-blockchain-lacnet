@@ -1,0 +1,16 @@
+{
+  "name": "obra-publica-scripts",
+  "version": "1.0.0",
+  "description": "Scripts para interactuar con el smart contract de obras públicas",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "node deploy-contract.js",
+    "register": "node register-obra.js",
+    "query": "node query-obras.js"
+  },
+  "dependencies": {
+    "web3": "^4.3.0",
+    "solc": "^0.8.21",
+    "dotenv": "^16.3.1"
+  }
+}

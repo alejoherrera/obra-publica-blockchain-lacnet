@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obra Pública Blockchain - Visualizador</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header .stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 140px);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .sidebar {
+            width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .map-container {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .obra-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+
+        .obra-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .obra-card.active {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+
+        .obra-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .obra-location {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .obra-date {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .btn-details {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.3s;
+            width: 100%;
+        }
+
+        .btn-details:hover {
+            background: #5568d3;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        .risk-crítica {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .risk-alta {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .risk-media {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .risk-baja {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Panel de Detalles */
+        .details-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 600px;
+            max-width: 90vw;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 20px rgba(0,0,0,0.2);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .details-panel.active {
+            right: 0;
+        }
+
+        .details-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .details-header h2 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .btn-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .details-content {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .risk-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .risk-item.crítica {
+            border-left-color: #c62828;
+            background: #ffebee;
+        }
+
+        .risk-item.alta {
+            border-left-color: #e65100;
+            background: #fff3e0;
+        }
+
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .risk-category {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .risk-severity {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .action-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .action-list li {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .action-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 10px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .blockchain-badge {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .blockchain-info {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .blockchain-info strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #1976d2;
+        }
+
+        .blockchain-info code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 400px;
+            }
+
+            .map-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏗️ Obra Pública Blockchain</h1>
+        <p>Sistema de registro y visualización de obras públicas en blockchain LACNET</p>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Total de Obras</div>
+                <div class="stat-value" id="totalObras">-</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Obras Activas</div>
+                <div class="stat-value" id="obrasActivas">-</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Último Bloque</div>
+                <div class="stat-value" id="blockNumber">-</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="blockchain-info">
+                <strong>📡 Estado de la Blockchain</strong>
+                <div>Contrato: <code id="contractAddress">Cargando...</code></div>
+                <div style="margin-top: 5px;">API: <code id="apiStatus">Conectando...</code></div>
+            </div>
+            <div id="obrasList"></div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- Panel de Detalles -->
+    <div class="details-panel" id="detailsPanel">
+        <div class="details-header">
+            <h2>📋 Detalles de la Obra</h2>
+            <button class="btn-close" onclick="closeDetails()">×</button>
+        </div>
+        <div class="details-content" id="detailsContent">
+            <!-- Contenido dinámico -->
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Configuración
+        const API_URL = 'http://localhost:3000';
+
+        // Variables globales
+        let map;
+        let markers = [];
+        let obras = [];
+        let selectedObraId = null;
+
+        // Inicializar mapa
+        function initMap() {
+            map = L.map('map').setView([9.9281, -84.0907], 13); // San José, Costa Rica
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        // Cargar estadísticas
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/stats`);
+                const data = await response.json();
+
+                document.getElementById('totalObras').textContent = data.totalObras;
+                document.getElementById('obrasActivas').textContent = data.obrasActivas;
+                document.getElementById('blockNumber').textContent = data.blockNumber;
+                document.getElementById('contractAddress').textContent = data.contractAddress.substring(0, 20) + '...';
+                document.getElementById('apiStatus').textContent = 'Conectado ✓';
+                document.getElementById('apiStatus').style.color = '#2e7d32';
+            } catch (error) {
+                console.error('Error al cargar estadísticas:', error);
+                document.getElementById('apiStatus').textContent = 'Error de conexión ✗';
+                document.getElementById('apiStatus').style.color = '#c62828';
+            }
+        }
+
+        // Cargar obras
+        async function loadObras() {
+            const obrasList = document.getElementById('obrasList');
+            obrasList.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando obras desde blockchain...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/obras`);
+                if (!response.ok) {
+                    throw new Error('Error al cargar obras');
+                }
+
+                const data = await response.json();
+                obras = data.obras;
+
+                if (obras.length === 0) {
+                    obrasList.innerHTML = '<div class="loading">No hay obras registradas aún.</div>';
+                    return;
+                }
+
+                renderObras();
+                addMarkersToMap();
+            } catch (error) {
+                console.error('Error al cargar obras:', error);
+                obrasList.innerHTML = `<div class="error">Error al cargar obras: ${error.message}<br><br>Asegúrate de que el nodo blockchain y la API estén corriendo.</div>`;
+            }
+        }
+
+        // Renderizar lista de obras
+        function renderObras() {
+            const obrasList = document.getElementById('obrasList');
+            obrasList.innerHTML = '';
+
+            obras.forEach(obra => {
+                const card = document.createElement('div');
+                card.className = 'obra-card';
+                card.onclick = () => selectObra(obra.id);
+
+                let riesgosHTML = '';
+                if (obra.datos.evaluacionRiesgos && obra.datos.evaluacionRiesgos.length > 0) {
+                    const maxSeveridad = obra.datos.evaluacionRiesgos.reduce((max, r) => {
+                        const severidades = { 'Crítica': 4, 'Alta': 3, 'Media': 2, 'Baja': 1 };
+                        return (severidades[r.severidad] || 0) > (severidades[max.severidad] || 0) ? r : max;
+                    });
+                    riesgosHTML = `<span class="risk-badge risk-${maxSeveridad.severidad.toLowerCase()}">${maxSeveridad.severidad}</span>`;
+                }
+
+                let videoIndicador = '';
+                if (obra.datos.multimedia?.videoYoutube) {
+                    videoIndicador = `<div class="obra-date">🎥 Video disponible</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="obra-title">${obra.tipoObra}</div>
+                    <div class="obra-location">📍 ${obra.ubicacion}</div>
+                    <div class="obra-date">🕐 ${new Date(obra.fecha).toLocaleString('es-ES')}</div>
+                    ${videoIndicador}
+                    ${riesgosHTML}
+                    <button class="btn-details" onclick="event.stopPropagation(); showDetails('${obra.id}')">Ver Detalles Completos</button>
+                `;
+
+                obrasList.appendChild(card);
+            });
+        }
+
+        // Agregar marcadores al mapa
+        function addMarkersToMap() {
+            // Limpiar marcadores existentes
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            obras.forEach(obra => {
+                // Leer coordenadas del JSON
+                let lat = 9.9281;
+                let lng = -84.0907;
+
+                if (obra.datos?.informacionGeneral?.coordenadas) {
+                    lat = obra.datos.informacionGeneral.coordenadas.latitud;
+                    lng = obra.datos.informacionGeneral.coordenadas.longitud;
+                }
+
+                const marker = L.marker([lat, lng]).addTo(map);
+
+                let riesgoHTML = '';
+                if (obra.datos.evaluacionRiesgos) {
+                    riesgoHTML = '<br><strong>Riesgos:</strong><ul>';
+                    obra.datos.evaluacionRiesgos.forEach(r => {
+                        riesgoHTML += `<li><strong>${r.categoria}</strong> (${r.severidad})</li>`;
+                    });
+                    riesgoHTML += '</ul>';
+                }
+
+                marker.bindPopup(`
+                    <strong>${obra.tipoObra}</strong><br>
+                    📍 ${obra.ubicacion}<br>
+                    🕐 ${new Date(obra.fecha).toLocaleString('es-ES')}<br>
+                    🆔 ID: ${obra.id}
+                    ${riesgoHTML}
+                    <button onclick="showDetails('${obra.id}')" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%;">Ver Detalles Completos</button>
+                `);
+
+                marker.on('click', () => selectObra(obra.id));
+
+                markers.push(marker);
+            });
+
+            // Ajustar vista del mapa a todos los marcadores
+            if (markers.length > 0) {
+                const group = L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // Seleccionar obra
+        function selectObra(id) {
+            selectedObraId = id;
+
+            // Actualizar cards
+            document.querySelectorAll('.obra-card').forEach((card, index) => {
+                if (obras[index].id === id) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+
+            // Abrir popup del marcador
+            const index = obras.findIndex(o => o.id === id);
+            if (index !== -1 && markers[index]) {
+                markers[index].openPopup();
+                map.panTo(markers[index].getLatLng());
+            }
+        }
+
+        // Mostrar detalles completos
+        function showDetails(id) {
+            const obra = obras.find(o => o.id === id);
+            if (!obra) return;
+
+            const datos = obra.datos;
+            let html = '';
+
+            // Video de YouTube
+            if (datos.multimedia?.videoYoutube) {
+                const videoId = datos.multimedia.videoYoutube.split('v=')[1]?.split('&')[0] || '';
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">🎥 Video</div>
+                        <div class="video-container">
+                            <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
+                        </div>
+                        <p style="font-size: 13px; color: #666; margin-top: 8px;">${datos.multimedia.descripcionVideo || ''}</p>
+                        <a href="${datos.multimedia.videoYoutube}" target="_blank" style="color: #667eea; font-size: 13px;">🔗 Abrir en YouTube</a>
+                    </div>
+                `;
+            }
+
+            // Información General
+            if (datos.informacionGeneral) {
+                const info = datos.informacionGeneral;
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">📋 Información General</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Tipo de Obra</div>
+                                <div class="info-value">${info.tipoObra}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Fase Constructiva</div>
+                                <div class="info-value">${info.faseConstructiva}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Ubicación Observada</div>
+                                <div class="info-value">${info.ubicacionObservada}</div>
+                            </div>
+                            ${info.coordenadas ? `
+                                <div class="info-item">
+                                    <div class="info-label">Coordenadas GPS</div>
+                                    <div class="info-value">
+                                        ${info.coordenadas.latitud}, ${info.coordenadas.longitud} (${info.coordenadas.pais})
+                                        <br>
+                                        <a href="https://www.google.com/maps?q=${info.coordenadas.latitud},${info.coordenadas.longitud}" target="_blank" style="color: #667eea; font-size: 12px;">📍 Ver en Google Maps</a>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div class="info-item">
+                                <div class="info-label">Fecha de Análisis</div>
+                                <div class="info-value">${info.fechaAnalisis}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Evaluación de Riesgos
+            if (datos.evaluacionRiesgos && datos.evaluacionRiesgos.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">⚠️ Evaluación de Riesgos</div>
+                `;
+                datos.evaluacionRiesgos.forEach(riesgo => {
+                    html += `
+                        <div class="risk-item ${riesgo.severidad.toLowerCase()}">
+                            <div class="risk-header">
+                                <div class="risk-category">${riesgo.categoria}</div>
+                                <span class="risk-severity risk-${riesgo.severidad.toLowerCase()}">${riesgo.severidad}</span>
+                            </div>
+                            <p style="margin-bottom: 10px; font-size: 14px;"><strong>Descripción:</strong> ${riesgo.descripcion}</p>
+                            <p style="font-size: 13px; color: #666;"><strong>Impacto Potencial:</strong> ${riesgo.potencialImpacto}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Análisis Dimensional
+            if (datos.analisisDimensionalReferenciado && datos.analisisDimensionalReferenciado.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">📏 Análisis Dimensional Referenciado</div>
+                `;
+                datos.analisisDimensionalReferenciado.forEach(analisis => {
+                    html += `
+                        <div class="info-item" style="margin-bottom: 12px;">
+                            <div class="info-label">${analisis.elementoMedido}</div>
+                            <div class="info-value"><strong>${analisis.estimacion}</strong></div>
+                            <p style="font-size: 12px; color: #666; margin-top: 5px;">Referencia: ${analisis.objetoReferencia}</p>
+                            <p style="font-size: 12px; color: #666;">${analisis.justificacionEscala}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Vulnerabilidad Climática
+            if (datos.vulnerabilidadClimatica && datos.vulnerabilidadClimatica.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">🌦️ Vulnerabilidad Climática</div>
+                `;
+                datos.vulnerabilidadClimatica.forEach(vuln => {
+                    html += `
+                        <div class="info-item" style="margin-bottom: 12px;">
+                            <div class="info-label">Factor Climático</div>
+                            <div class="info-value" style="font-weight: bold; color: #e65100;">${vuln.factorClimatico}</div>
+                            <p style="font-size: 13px; margin-top: 8px;"><strong>Elemento Vulnerable:</strong> ${vuln.elementoVulnerable}</p>
+                            <p style="font-size: 13px; color: #666; margin-top: 5px;"><strong>Riesgo Específico:</strong> ${vuln.riesgoEspecifico}</p>
+                            <p style="font-size: 13px; color: #2e7d32; margin-top: 5px;"><strong>Recomendación:</strong> ${vuln.recomendacionPreventiva}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Puntos para Consulta Experta
+            if (datos.puntosParaConsultaExperta && datos.puntosParaConsultaExperta.length > 0) {
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">👨‍🔬 Consulta Experta Requerida</div>
+                `;
+                datos.puntosParaConsultaExperta.forEach(punto => {
+                    html += `
+                        <div class="info-item" style="margin-bottom: 15px; border-left: 4px solid #e65100;">
+                            <div class="info-label">Área de Especialidad</div>
+                            <div class="info-value" style="font-weight: bold; color: #e65100;">${punto.areaEspecialidad}</div>
+                            <p style="font-size: 13px; margin-top: 8px;"><strong>Observación:</strong> ${punto.observacionClave}</p>
+                            <p style="font-size: 13px; color: #666; margin-top: 5px;"><strong>Pregunta:</strong> ${punto.preguntaResolver}</p>
+                            <p style="font-size: 13px; color: #c62828; margin-top: 5px; font-weight: 500;"><strong>Acción:</strong> ${punto.accionRequerida}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // Plan de Acción
+            if (datos.planAccionPriorizado) {
+                html += `
+                    <div class="detail-section">
+                        <div class="section-title">🚨 Plan de Acción Priorizado</div>
+                `;
+
+                if (datos.planAccionPriorizado.accionesInmediatas) {
+                    html += `
+                        <h4 style="color: #c62828; margin-bottom: 10px;">Acciones Inmediatas</h4>
+                        <ul class="action-list">
+                            ${datos.planAccionPriorizado.accionesInmediatas.map(accion => `<li>${accion}</li>`).join('')}
+                        </ul>
+                    `;
+                }
+
+                if (datos.planAccionPriorizado.accionesPreventivas) {
+                    html += `
+                        <h4 style="color: #e65100; margin-top: 15px; margin-bottom: 10px;">Acciones Preventivas</h4>
+                        <ul class="action-list">
+                            ${datos.planAccionPriorizado.accionesPreventivas.map(accion => `<li>${accion}</li>`).join('')}
+                        </ul>
+                    `;
+                }
+                html += `</div>`;
+            }
+
+            // Metadata Blockchain
+            html += `
+                <div class="detail-section">
+                    <div class="section-title">🔗 Información Blockchain</div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">ID de Obra</div>
+                            <div class="info-value">${obra.id}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Dirección del Reportante</div>
+                            <div class="info-value" style="word-break: break-all; font-size: 11px; font-family: monospace;">${obra.reportadoPor}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Fecha de Registro</div>
+                            <div class="info-value">${new Date(obra.fecha).toLocaleString('es-ES')}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Timestamp Blockchain</div>
+                            <div class="info-value">${obra.timestamp}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Estado</div>
+                            <div class="info-value" style="color: ${obra.activo ? '#2e7d32' : '#c62828'};">${obra.activo ? '✓ Activa' : '✗ Inactiva'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailsContent').innerHTML = html;
+            document.getElementById('detailsPanel').classList.add('active');
+        }
+
+        // Cerrar panel de detalles
+        function closeDetails() {
+            document.getElementById('detailsPanel').classList.remove('active');
+        }
+
+        // Inicializar aplicación
+        async function init() {
+            initMap();
+            await loadStats();
+            await loadObras();
+
+            // Actualizar cada 10 segundos
+            setInterval(loadStats, 10000);
+        }
+
+        // Ejecutar cuando cargue la página
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

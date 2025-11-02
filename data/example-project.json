@@ -1,0 +1,81 @@
+{
+  "informacionGeneral": {
+    "tipoObra": "Canalización/Modificación de cauce bajo una carretera/viaducto existente.",
+    "faseConstructiva": "Movimiento de tierras, cimentaciones y construcción de estructuras de contención/muros. Se observan encofrados y armaduras de refuerzo.",
+    "ubicacionObservada": "Entorno de vía rápida (carretera o autopista) que cruza sobre un cauce de río o drenaje pluvial, con estructuras de construcción activas.",
+    "coordenadas": {
+      "latitud": 9.916088,
+      "longitud": -84.067517,
+      "pais": "Costa Rica"
+    },
+    "fechaAnalisis": "2025-10-23"
+  },
+  "evaluacionRiesgos": [
+    {
+      "categoria": "Hidrológico",
+      "descripcion": "Aumento extremo y rápido del caudal del río/drenaje debido a lluvia intensa (evidente en la secuencia temporal). El nivel de agua inunda las cotas bajas de la excavación y alcanza niveles críticos.",
+      "severidad": "Crítica",
+      "potencialImpacto": "Pérdida de vidas si hay personal en cotas bajas, daño estructural a cimentaciones y encofrados frescos, erosión severa de taludes y bases, retraso significativo del proyecto."
+    },
+    {
+      "categoria": "Geotécnico",
+      "descripcion": "Erosión y posible falla de los taludes de tierra expuestos debido a la saturación rápida y la socavación por el flujo. El agua impacta directamente los taludes.",
+      "severidad": "Alta",
+      "potencialImpacto": "Colapso de sección de la obra o del terraplén de la vía superior, poniendo en riesgo la infraestructura vial en servicio."
+    },
+    {
+      "categoria": "Operativo/SST",
+      "descripcion": "Riesgo de ahogamiento/arrastre de personal por el caudal y velocidad de la crecida. Riesgo inminente en la zona del canal y la escalera lateral.",
+      "severidad": "Crítica",
+      "potencialImpacto": "Accidente grave, fatalidad, y pérdida de equipo."
+    }
+  ],
+  "analisisDimensionalReferenciado": [
+    {
+      "elementoMedido": "Nivel máximo de agua (respecto al fondo del canal seco, en el pico de crecida ~14:47)",
+      "estimacion": "~2.5 - 3.0 metros de altura",
+      "objetoReferencia": "Altura de la pared de contención de hormigón a la derecha (estimada a 3-4 metros) y altura de una camioneta tipo SUV (~1.8m).",
+      "justificacionEscala": "El nivel del agua está muy cerca de la parte superior del muro de contención existente o al menos 1.5 veces la altura de una SUV promedio. La inundación de la zona de trabajo es total."
+    },
+    {
+      "elementoMedido": "Distancia de seguridad de maquinaria.",
+      "estimacion": "N/A",
+      "objetoReferencia": "N/A",
+      "justificacionEscala": "No se observa maquinaria operando peligrosamente cerca del borde de la excavación en el pico de inundación; el riesgo principal es la inundación."
+    }
+  ],
+  "vulnerabilidadClimatica": [
+    {
+      "factorClimatico": "Lluvia Intensa | Crecida de Río",
+      "elementoVulnerable": "Excavación abierta, cimentaciones y encofrados de hormigón fresco, taludes de tierra expuestos.",
+      "riesgoEspecifico": "Inundación repentina (flash flood), socavación de la base de las estructuras, arrastre de material, pérdida de estabilidad del talud superior.",
+      "recomendacionPreventiva": "Implementar sistema de monitoreo de nivel de agua y pluviómetro con alarma temprana. Proteger los pies de talud y las áreas de cimentación con defensas temporales robustas (ej. ataguías prefabricadas)."
+    }
+  ],
+  "puntosParaConsultaExperta": [
+    {
+      "areaEspecialidad": "Hidrología | Ingeniería Civil",
+      "observacionClave": "La velocidad y el caudal de crecida son extremadamente rápidos y altos, superando la protección temporal aparente.",
+      "preguntaResolver": "¿Cuál es el período de retorno estimado para el caudal observado? ¿La estructura final tiene capacidad suficiente para el caudal máximo de diseño?",
+      "accionRequerida": "Revisión inmediata del estudio hidrológico (verificación de caudales máximos históricos y de diseño)."
+    },
+    {
+      "areaEspecialidad": "Ingeniería Estructural | Geotécnica",
+      "observacionClave": "Las estructuras de contención y encofrados fueron impactados directamente por agua a alta velocidad. Se observan flujos de agua turbia impactando cimentaciones.",
+      "preguntaResolver": "¿Se comprometió la resistencia del hormigón fresco o la integridad de los encofrados por el impacto del agua? ¿Existe riesgo de socavación de la sub-base?",
+      "accionRequerida": "Inspección visual inmediata por un especialista al descender el agua, para evaluar daños y socavación."
+    }
+  ],
+  "planAccionPriorizado": {
+    "accionesInmediatas": [
+      "Paralización de trabajos en zonas de riesgo inminente.",
+      "Evacuación de personal de cotas bajas.",
+      "Aseguramiento de maquinaria y materiales."
+    ],
+    "accionesPreventivas": [
+      "Instalación de sistema de monitoreo de nivel de agua (alerta temprana).",
+      "Revisión y actualización del plan de emergencia del sitio.",
+      "Construcción de defensas temporales de mayor capacidad (ej. ataguías o diques de contención) para proteger la excavación principal."
+    ]
+  }
+}
