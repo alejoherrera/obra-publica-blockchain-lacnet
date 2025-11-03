@@ -95,3 +95,7 @@ $RECYCLE.BIN/
 # Local documentation files (keep only README.md in repo)
 *.md
 !README.md
+
+# Local utility files
+*.bat
+*.txt
