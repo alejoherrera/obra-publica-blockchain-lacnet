@@ -136,8 +136,8 @@ wsl --install
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/obra-publica-blockchain.git
-cd obra-publica-blockchain
+git clone https://github.com/alejoherrera/obra-publica-blockchain-lacnet.git
+cd obra-publica-blockchain-lacnet
 ```
 
 ### 2. Start LACNET Local Node
@@ -166,7 +166,7 @@ Wait until you see blocks being generated, then press `Ctrl+C`.
 ### 3. Deploy Smart Contract
 
 ```bash
-cd obra-publica-blockchain/scripts
+cd obra-publica-blockchain-lacnet/scripts
 npm install
 node deploy-contract.js
 ```
@@ -529,9 +529,9 @@ If you use this project in your research or work, please cite:
 ```bibtex
 @software{obra_publica_blockchain,
   title = {Public Works Blockchain Registry},
-  author = {Your Name},
+  author = {Juan Alejandro Herrera López},
   year = {2025},
-  url = {https://github.com/yourusername/obra-publica-blockchain}
+  url = {https://github.com/alejoherrera/obra-publica-blockchain-lacnet}
 }
 ```
 
