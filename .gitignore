@@ -91,3 +91,7 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 .nfs*
+
+# Local documentation files (keep only README.md in repo)
+*.md
+!README.md
